@@ -2,8 +2,14 @@ use crate::error::Result;
 use sqlx::PgPool;
 
 pub async fn init_db(database_url: &str) -> Result<PgPool> {
+    use std::time::Duration;
+
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
+        .min_connections(1)
+        .acquire_timeout(Duration::from_secs(30))
+        .idle_timeout(Duration::from_secs(10))
+        .max_lifetime(Duration::from_secs(30 * 60))
         .connect(database_url)
         .await
         .map_err(|e| crate::error::AppError::Database(e.to_string()))?;
