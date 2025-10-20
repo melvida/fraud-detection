@@ -1,0 +1,34 @@
+# Rust
+/target
+/backend/target
+**/debug/
+**/release/
+
+# Environment files
+.env
+.env.local
+.env.production
+backend/.env
+
+# Node/Frontend
+node_modules/
+gui/node_modules/
+gui/dist/
+gui/.vite/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite
+
+*.md

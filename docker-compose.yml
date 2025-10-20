@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: fraud_detection_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fraud_detection_db
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    container_name: fraud_detection_backend
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/fraud_detection_db
+      RUST_LOG: info
+    ports:
+      - 8000:8000
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  gui:
+    build:
+      context: ./gui
+      dockerfile: Dockerfile
+    container_name: fraud_detection_frontend
+    ports:
+      - 3000:3000
+    environment:
+      REACT_APP_API_URL: http://localhost:8080
+      REACT_APP_WS_URL: ws://localhost:8080/ws
+    depends_on:
+      - backend
+    volumes:
+      - ./gui:/app
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:3000/health || exit 1" ]
+      interval: 30s
+
+volumes:
+  postgres_data:
