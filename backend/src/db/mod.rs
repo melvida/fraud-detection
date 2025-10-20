@@ -3,6 +3,15 @@ use sqlx::PgPool;
 
 pub async fn init_db(database_url: &str) -> Result<PgPool> {
     use std::time::Duration;
+    use sqlx::postgres::PgConnectOptions;
+    use std::str::FromStr;
+
+    // Parse connection options and disable prepared statements for pgbouncer/Supabase
+    let mut options = PgConnectOptions::from_str(database_url)
+        .map_err(|e| crate::error::AppError::Database(e.to_string()))?;
+
+    // Disable prepared statements for connection poolers
+    options = options.statement_cache_capacity(0);
 
     let pool = sqlx::postgres::PgPoolOptions::new()
         .max_connections(5)
@@ -10,7 +19,7 @@ pub async fn init_db(database_url: &str) -> Result<PgPool> {
         .acquire_timeout(Duration::from_secs(30))
         .idle_timeout(Duration::from_secs(10))
         .max_lifetime(Duration::from_secs(30 * 60))
-        .connect(database_url)
+        .connect_with(options)
         .await
         .map_err(|e| crate::error::AppError::Database(e.to_string()))?;
 
